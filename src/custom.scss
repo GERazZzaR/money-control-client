@@ -1,0 +1,22 @@
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/mixins";
+
+.centerLabel {
+    font-size: 14px;
+    top: 43%;
+  }
+  
+  @include media-breakpoint-up(sm) {
+    .centerLabel {
+      font-size: 24px;
+      top: 40%;
+    }
+  }
+
+  .card-columns {
+    @include media-breakpoint-up(sm) {
+      column-count: 2;
+    }
+  }
+  

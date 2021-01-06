@@ -1,6 +1,6 @@
 <template>
-  <div class="home container">
-    <h1 class="my-3">Home</h1>
+  <div class="fixkosten container">
+    <h1 class="my-3">Montaliche Fixkosten</h1>
   </div>
 </template>
 
@@ -9,7 +9,7 @@ import { mapState } from "vuex";
 import TransactionsService from "@/services/TransactionsService";
 
 export default {
-  name: "Home",
+  name: "Fixkosten",
   components: {},
   data() {
     return {
