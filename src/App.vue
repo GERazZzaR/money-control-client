@@ -703,6 +703,7 @@
 </style>
 
 <script>
+// TEST IS GOOD
 /* global $ */
 import Navbar from "@/components/Navbar.vue";
 import TransactionsService from "@/services/TransactionsService";
