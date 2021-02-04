@@ -1,7 +1,7 @@
 <template>
     <div class="DiagramCategories">
         <div class="container donutCell">
-            <div class="row justify-content-md-center">
+            <div class="row justify-content-center">
                 <select v-model="selectedInOut"
                     @change="changeSelectedCategory"
                     class="form-control w-50 mt-5 mb-3"
@@ -10,7 +10,7 @@
                     <option>Einnahmen</option>
                 </select>
             </div>
-            <div class="row justify-content-md-center">
+            <div class="row justify-content-center">
                 <select v-model="selectedCategory" class="form-control w-50 mb-5 mt-3" @change="changeSelectedCategory">
                     <option>Alle Kategorien</option>
                     <option v-for="category in categories" :key="category.id">{{ category.name }}</option>

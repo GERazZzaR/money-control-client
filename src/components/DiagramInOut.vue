@@ -1,7 +1,7 @@
 <template>
   <div class="DiagramInOut">
     <div class="container donutCell">
-      <div align="center" class="donutDiv" id="piechart"></div>
+      <div align="center" class="donutDiv row justify-content-center" id="piechart"></div>
       <div class="centerLabel">
         <p>Verfügbar</p>
         <p>{{ availableBudget }} €</p>
@@ -17,9 +17,12 @@ import { mapState } from "vuex";
 export default {
   name: "DiagramInOut",
   data() {
-    return {};
+    return {
+
+    };
   },
   mounted() {
+    window.addEventListener("resize", this.resize);
     this.drawChart();
   },
   computed: {
@@ -28,7 +31,7 @@ export default {
   watch: {
     availableBudget: function() {
       this.drawChart();
-    }
+    },
   },
   methods: {
     drawChart() {
@@ -58,7 +61,7 @@ export default {
         var options = {
           pieHole: 0.9,
           width: $(window).width() * 0.5,
-          height: $(window).height() * 0.5,
+          height: $(window).width() * 0.5,
           legend: "none",
           pieSliceText: "none",
           tooltip: { trigger: "none" },
@@ -82,6 +85,9 @@ export default {
         );
         chart.draw(data, options);
       }
+    },
+    resize(e) {
+      this.drawChart()
     }
   }
 };

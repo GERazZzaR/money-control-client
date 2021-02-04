@@ -108,7 +108,9 @@
                 </div>
               </div>
               <div class="form-group">
-                <label>Kategorie *</label>
+                <div class="row ml-0">
+                  <label>Kategorie *</label>
+                </div>
                 <div class="row">
                   <div class="col">
                     <select
@@ -359,6 +361,10 @@
   .card-columns {
     column-count: 2;
   }
+}
+
+form label {
+  float:left;
 }
 
 #app {
