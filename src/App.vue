@@ -1,31 +1,23 @@
 <template>
   <div id="app">
-    <Navbar class="mb-5" style="height:80px;" />
-    <div
-      class="spinner-border"
-      role="status"
-      v-show="this.$store.laden == true"
-      label="Loading..."
-    >
-      <span class="sr-only">Loading...</span>
-    </div>
+    <Navbar v-bind:class=" { 'mb-5': $route.path !== '/dashboard' }" style="height:80px;" />
     <router-view id="routerView" />
 
-    <!--Modal Neue Ausgabe hinzufügen-->
+    <!--Modal Transaktion hinzufügen / bearbeiten-->
     <div
       class="modal fade"
-      id="newMinusModal"
+      id="transactionModal"
       tabindex="-1"
       data-backdrop="static"
       role="dialog"
-      aria-labelledby="newMinusModalLabel"
+      aria-labelledby="transactionModalLabel"
       aria-hidden="true"
     >
       <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content p-3">
           <div class="modal-header">
-            <h5 class="modal-title" id="newMinusModalLabel">
-              Neue Ausgabe hinzufügen
+            <h5 class="modal-title" id="transactionModalLabel">
+              {{ modalTitle }}
             </h5>
             <button
               type="button"
@@ -38,16 +30,17 @@
             </button>
           </div>
           <div class="modal-body">
-            <form class="needs-validation-Minus" 
+            <form class="needs-validation-Transaction" 
               novalidate="true"
-              @submit="validate('add', $event)"
+              @submit="$event.preventDefault()"
+              v-bind:class="{ 'was-validated': transactionValidated }"
             >
               <div class="form-group">
                 <label>Titel *</label>
                 <input
                   type="text"
                   class="form-control"
-                  v-model="note"
+                  v-model="title"
                   placeholder="Gib den Titel an."
                   required
                 />
@@ -58,14 +51,16 @@
               <div class="form-group">
                 <label>Betrag in Euro *</label>
                 <input
+                  v-bind:class="{ 'is-invalid': (amount <= 0 && amount) === 0 }"
                   type="number"
                   class="form-control"
                   v-model.number="amount"
+                  min="0"
                   placeholder="Gib den Betrag ein."
                   required
                 />
                 <div class="invalid-feedback">
-                  Bitte gib einen Betrag ein.
+                  Bitte gib einen Betrag größer 0 ein.
                 </div>
               </div>
               <div class="form-group">
@@ -74,7 +69,6 @@
                   type="date"
                   class="form-control"
                   v-model="date"
-                  id="datetimepickerSpend"
                   placeholder="Gib das Datum ein"
                   required
                 />
@@ -156,189 +150,29 @@
                     class="btn btn-secondary mt-1"
                     data-dismiss="modal"
                     aria-label="Close"
+                    id="closeTransaction"
                   >
                     Abbrechen
                   </button>
                 </div>
                 <div class="col-mx-auto mr-3">
                   <button
-                    id="addMinus"
+                    v-if="modalNew === true"
                     type="submit"
-                    @click="
-                      positiveAmount = false
-                    "
                     class="btn btn-primary mt-1"
                     aria-label="Close"
+                    @click="transactionValidated = true, validateTransaction()"
                   >
                     Hinzufügen
                   </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!--Modal Neue Einnahme hinzufügen-->
-    <div
-      class="modal fade"
-      id="newPlusModal"
-      tabindex="-1"
-      data-backdrop="static"
-      role="dialog"
-      aria-labelledby="newPlusModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content p-3">
-          <div class="modal-header">
-            <h5 class="modal-title" id="newPlusModalLabel">
-              Neue Einnahme hinzufügen
-            </h5>
-            <button
-              type="button"
-              @click="resetTransaction()"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form class="needs-validation-Plus" 
-              novalidate="true"
-              @submit="validate('add', $event)"
-            >
-              <div class="form-group">
-                <label>Titel *</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="note"
-                  placeholder="Gib den Titel an"
-                  required
-                />
-                <div class="invalid-feedback">
-                  Bitte gib einen Titel an.
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Betrag in Euro *</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="amount"
-                  placeholder="Gib den Betrag ein."
-                  required
-                />
-                <div class="invalid-feedback">
-                  Bitte gib einen Betrag ein.
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Datum *</label>
-                <input
-                  type="date"
-                  class="form-control"
-                  v-model="date"
-                  id="datetimepickerBudget"
-                  placeholder="Gib das Datum ein"
-                  required
-                />
-                <div class="invalid-feedback">
-                  Bitte gib ein Datum ein.
-                </div>
-                <div class="row mt-2">
-                  <div class="col-3">
-                    <small>Wiederkehrend?</small>
-                  </div>
-                  <div class="col">
-                    <small>Nie</small>
-                    <input
-                      v-model="wiederkehrend"
-                      type="radio"
-                      class="form-check-input ml-2"
-                      name="wiederkehrendOptions"
-                      value="Nie"
-                    />
-                    <small class="ml-5">Monat</small>
-                    <input
-                      v-model="wiederkehrend"
-                      type="radio"
-                      class="form-check-input ml-2"
-                      name="wiederkehrendOptions"
-                      value="Monat"
-                    />
-                    <small class="ml-5">Jahr</small>
-                    <input
-                      v-model="wiederkehrend"
-                      type="radio"
-                      class="form-check-input ml-2"
-                      name="wiederkehrendOptions"
-                      value="Jahr"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Kategorie *</label>
-                <div class="row">
-                  <div class="col">
-                    <select
-                      v-model="category"
-                      style="cursor:pointer;"
-                      class="form-control"
-                      placeholder="Wähle eine Kategorie"
-                      required
-                    >
-                      <option
-                        v-for="category in categories"
-                        :key="category.id"
-                        >{{ category.name }}</option
-                      >
-                    </select>
-                    <div class="invalid-feedback">
-                      Bitte gib eine Kategorie ein.
-                    </div>
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      data-toggle="modal"
-                      data-target="#addCategoryModal"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <br />
-              <div class="row justify-content-between">
-                <div class="col-mx-auto ml-3">
                   <button
-                    type="button"
-                    @click="resetTransaction()"
-                    class="btn btn-secondary mt-1"
-                    data-dismiss="modal"
-                    aria-label="Close"
-                  >
-                    Abbrechen
-                  </button>
-                </div>
-                <div class="col-mx-auto mr-3">
-                  <button
-                    id="addPlus"
+                    v-if="modalNew === false"
                     type="submit"
-                    @click="
-                      positiveAmount = true;
-                    "
-                    class="btn btn-primary mt-1"
+                    class="btn btn-warning mt-1"
                     aria-label="Close"
+                    @click="transactionValidated = true, validateTransaction()"
                   >
-                    Hinzufügen
+                    Ändern
                   </button>
                 </div>
               </div>
@@ -377,7 +211,7 @@
           <div class="modal-body">
             <form class="needs-validation-Enddate"
               novalidate="novalidate"
-              @submit="validate('add', $event)"
+              @submit="$event.preventDefault(), validateTransaction();"
             >
               <p>
                 Bis zu welchem Datum soll die Transaktion wiederholt werden?
@@ -385,6 +219,7 @@
               <div class="form-group">
                 <label>Datum *</label>
                 <input
+                  v-bind:class="{ 'is-invalid': endDateValidated }"
                   type="date"
                   class="form-control"
                   v-model="endDate"
@@ -393,7 +228,7 @@
                   required
                 />
                 <div class="invalid-feedback">
-                  Bitte gib ein Datum ein.
+                  Bitte gib ein gültiges Datum in der Zukunft ein.
                 </div>
               </div>
               <br />
@@ -416,172 +251,6 @@
                     aria-label="Close"
                   >
                     Hinzufügen
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!--Modal Transaktion bearbeiten-->
-    <div
-      class="modal fade"
-      id="updateTransactionModal"
-      tabindex="-1"
-      data-backdrop="static"
-      role="dialog"
-      aria-labelledby="updateTransactionModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content p-3">
-          <div class="modal-header">
-            <h5 class="modal-title" id="updateTransactionModalLabel">
-              Transaktion bearbeiten
-            </h5>
-            <button
-              type="button"
-              @click="resetTransaction()"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form class="needs-validation-Edit" 
-              novalidate="true"
-              @submit="validate('edit', $event)"
-            >
-              <div class="form-group">
-                <label>Titel *</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="note"
-                  placeholder="Gib den Titel an."
-                  required
-                />
-                <div class="invalid-feedback">
-                  Bitte gib einen Titel an.
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Betrag in Euro *</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="amount"
-                  placeholder="Gib den Betrag ein."
-                  required
-                />
-                <div class="invalid-feedback">
-                  Bitte gib einen Betrag ein.
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Datum *</label>
-                <input
-                  type="date"
-                  class="form-control"
-                  v-model="date"
-                  id="datetimepickerEdit"
-                  placeholder="Gib das Datum ein"
-                  required
-                />
-                <div class="invalid-feedback">
-                  Bitte gib ein Datum ein.
-                </div>
-                <div class="row mt-2">
-                  <div class="col-3">
-                    <small>Wiederkehrend?</small>
-                  </div>
-                  <div class="col">
-                    <small>Nie</small>
-                    <input
-                      v-model="wiederkehrend"
-                      type="radio"
-                      class="form-check-input ml-2"
-                      name="wiederkehrendOptions"
-                      value="Nie"
-                    />
-                    <small class="ml-5">Monat</small>
-                    <input
-                      v-model="wiederkehrend"
-                      type="radio"
-                      class="form-check-input ml-2"
-                      name="wiederkehrendOptions"
-                      value="Monat"
-                    />
-                    <small class="ml-5">Jahr</small>
-                    <input
-                      v-model="wiederkehrend"
-                      type="radio"
-                      class="form-check-input ml-2"
-                      name="wiederkehrendOptions"
-                      value="Jahr"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Kategorie *</label>
-                <div class="row">
-                  <div class="col">
-                    <select
-                      v-model="category"
-                      style="cursor:pointer;"
-                      class="form-control"
-                      placeholder="Wähle eine Kategorie"
-                      required
-                    >
-                      <option
-                        v-for="category in categories"
-                        :key="category.id"
-                        >{{ category.name }}</option
-                      >
-                    </select>
-                    <div class="invalid-feedback">
-                      Bitte gib eine Kategorie ein.
-                    </div>
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      data-toggle="modal"
-                      data-target="#addCategoryModal"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <br />
-              <div class="row justify-content-between">
-                <div class="col-mx-auto ml-3">
-                  <button
-                    id="closeEditTransaction"
-                    type="button"
-                    @click="resetTransaction()"
-                    class="btn btn-secondary mt-3"
-                    data-dismiss="modal"
-                    aria-label="Close"
-                  >
-                    Abbrechen
-                  </button>
-                </div>
-                <div class="col-mx-auto mr-3">
-                  <button
-                    id="updateTransaction"
-                    type="submit"
-                    class="btn btn-primary mt-3"
-                    aria-label="Close"
-                  >
-                    Ändern
                   </button>
                 </div>
               </div>
@@ -620,19 +289,23 @@
           <div class="modal-body">
             <form class="needs-validation-addCategory" 
               novalidate="true"
-              @submit="validate('category', $event)"
+              @submit="$event.preventDefault(), addCategory()"
             >
               <div class="form-group">
                 <label>Kategorie *</label>
                 <input
+                  v-bind:class="{ 'is-invalid': categoryValidated }"
                   type="text"
                   class="form-control"
                   v-model="newCategory"
                   placeholder="Name der Kategorie *"
                   required
                 />
-                <div class="invalid-feedback">
+                <div class="invalid-feedback" v-if="newCategory === ''">
                   Gib den Namen der Kategorie an.
+                </div>
+                <div class="invalid-feedback" v-if="categoryExists">
+                  Diese Kategorie gibt es bereits!
                 </div>
               </div>
               <br />
@@ -655,6 +328,7 @@
                     type="submit"
                     class="btn btn-primary mt-1"
                     aria-label="Close"
+                    @click="categoryValidated = true"
                   >
                     Hinzufügen
                   </button>
@@ -688,9 +362,10 @@
 }
 
 #app {
-  font-family: "Montserrat";
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-align: center;
   color: #2c3e50;
 }
 
@@ -703,7 +378,7 @@
 </style>
 
 <script>
-// TEST IS GOOD
+/* eslint-disable */
 /* global $ */
 import Navbar from "@/components/Navbar.vue";
 import TransactionsService from "@/services/TransactionsService";
@@ -714,65 +389,87 @@ export default {
   components: {
     Navbar
   },
-  data: function() {
+  data: () => {
     return {
-      availableBudget: 0,
-      totalSpend: null,
-      totalBudget: null,
-      transactions: [],
-      allTransactions: [],
-      categories: [],
+      modalTitle: '',
+      modalNew: true,
       amount: null,
-      date: "",
-      wiederkehrend: "Nie",
-      category: "Allgemein",
-      note: null,
-      positiveAmount: null,
+      date: '',
+      wiederkehrend: 'Nie',
+      category: 'Allgemein',
+      title: '',
       endDate: null,
       t_id: null,
-      newCategory: ""
-    };
+      newCategory: '',
+      transactionValidated: false,
+      categoryValidated: false,
+      categoryExists: false,
+      endDateValidated: false,
+    }
   },
   created() {
     this.fetchAllTransactions();
     this.fetchAllCategories();
   },
   computed: {
-    ...mapState(["selectedMonth", "selectedYear", "monatJahr"])
+    ...mapState(["transactions", "categories", "selectedMonth", "selectedYear", "monatJahr"])
   },
   watch: {
     $route: function () {
       $('.navbar-toggler').trigger('click');
-    }
+    },
+    newCategory: function(){
+      this.categoryValidated = false;
+    },
+    title: function(){
+      this.resetValidationTransaction();
+    },
+    amount: function(){
+      this.resetValidationTransaction();
+    },
+    date: function(){
+      this.resetValidationTransaction();
+    },
+    endDate: function(){
+      this.endDateValidated = false;
+    },
   },
   methods: {
     async fetchAllTransactions() {
-      const response = await TransactionsService.fetchAllTransactions();
-      this.allTransactions = response.data.transactions;
-      this.updateTransactionArray(this.allTransactions);
-      this.initialLoad();
+      try {
+        const response = await TransactionsService.fetchAllTransactions();
+        let transactions = response.data.transactions;
+        this.$store.dispatch("updateTransactions", transactions);
+        this.setDate();
+        this.setYears();
+        this.calculateAmounts();
+      } catch(e) {
+        console.log(e)
+      }     
     },
 
-    initialLoad() {
-      var yearsHelper = [];
-      for (var i = 0; i < this.transactions.length; i++) {
-        if (this.transactions[i].date.length > 13) {
-          this.transactions[i].date = this.getNormalFormatTime(
-            this.transactions[i].date
-          );
-          var currentYear =
-            this.transactions[i].date[6] +
-            this.transactions[i].date[7] +
-            this.transactions[i].date[8] +
-            this.transactions[i].date[9];
-          if (!yearsHelper.includes(currentYear)) {
-            yearsHelper.push(currentYear);
+    setYears() {
+      let years = [];
+      this.transactions.forEach(transaction => {
+        if (transaction.date.length > 13) {
+          transaction.date = this.getNormalFormatTime(transaction.date);
+          let currentYear =
+            transaction.date[6] +
+            transaction.date[7] +
+            transaction.date[8] +
+            transaction.date[9];
+          if (!years.includes(currentYear)) {
+            years.push(currentYear);
           }
         }
+      })
+      this.$store.dispatch("updateYears", years);
+    },
+
+    resetValidationTransaction() {
+      if(this.transactionValidated) {
+        this.transactionValidated = false;
       }
-      this.setDate();
-      this.$store.dispatch("updateYears", yearsHelper);
-      this.calculateAmounts();
     },
 
     setDate() {
@@ -787,301 +484,229 @@ export default {
     },
 
     calculateAmounts() {
-      this.availableBudget = 0.0;
-      this.totalBudget = 0.0;
-      this.totalSpend = 0.0;
-      for (var i = 0; i < this.transactions.length; i++) {
-        if (this.monatJahr == "Monat") {
-          if (
-            parseInt(
-              this.transactions[i].date[3] + this.transactions[i].date[4]
-            ) == this.selectedMonth &&
-            parseInt(
-              this.transactions[i].date[6] +
-                this.transactions[i].date[7] +
-                this.transactions[i].date[8] +
-                this.transactions[i].date[9]
-            ) == this.selectedYear
-          ) {
-            this.availableBudget =
-              this.availableBudget +
-              Math.round(this.transactions[i].amount.$numberDecimal * 100) /
-                100;
-            if (
-              Math.round(this.transactions[i].amount.$numberDecimal * 100) /
-                100 >
-              0
-            ) {
-              this.totalBudget =
-                this.totalBudget +
-                Math.round(this.transactions[i].amount.$numberDecimal * 100) /
-                  100;
+      let availableBudget = 0.0;
+      let totalBudget = 0.0;
+      let totalSpend = 0.0;
+      this.transactions.forEach(transaction => {
+        let transactionMonth = parseInt(transaction.date[3] + transaction.date[4])
+        let transactionYear = parseInt(transaction.date[6] + transaction.date[7] + transaction.date[8] + transaction.date[9])
+        let amount = Math.round(transaction.amount.$numberDecimal * 100) / 100
+
+        if (this.monatJahr === "Monat") {
+          if (transactionMonth === this.selectedMonth && transactionYear === this.selectedYear) {
+            availableBudget = availableBudget + amount;
+            if (amount > 0) {
+              totalBudget += amount;
             } else {
-              this.totalSpend =
-                this.totalSpend +
-                Math.round(this.transactions[i].amount.$numberDecimal * 100) /
-                  100;
+              totalSpend += amount;
             }
           }
         } else {
-          if (
-            parseInt(
-              this.transactions[i].date[6] +
-                this.transactions[i].date[7] +
-                this.transactions[i].date[8] +
-                this.transactions[i].date[9]
-            ) == this.selectedYear
-          ) {
-            this.availableBudget =
-              this.availableBudget +
-              Math.round(this.transactions[i].amount.$numberDecimal * 100) / 
-                100;
-            if (
-              Math.round(this.transactions[i].amount.$numberDecimal * 100) /
-                100 >
-              0
-            ) {
-              this.totalBudget =
-                this.totalBudget +
-                Math.round(this.transactions[i].amount.$numberDecimal * 100) /
-                  100;
+          if (transactionYear === this.selectedYear) {
+            availableBudget += amount;
+            if (amount > 0) {
+              totalBudget += amount;
             } else {
-              this.totalSpend =
-                this.totalSpend +
-                Math.round(this.transactions[i].amount.$numberDecimal * 100) /
-                  100;
+              totalSpend += amount;
             }
           }
         }
-      }
-      this.$store.dispatch("updateTransactions", this.transactions);
-
-      this.availableBudget = Math.round(this.availableBudget * 100) / 100;
-      this.totalBudget = Math.round(this.totalBudget * 100) / 100;
-      this.totalSpend = Math.round(this.totalSpend * 100) / 100;
-
-      this.$store.dispatch("updateAvailableBudget", this.availableBudget);
-      this.$store.dispatch("updateTotalBudget", this.totalBudget);
-      this.$store.dispatch("updateTotalSpend", this.totalSpend);
+      })
+      this.$store.dispatch("updateAvailableBudget", this.calculateBudgetMath(availableBudget));
+      this.$store.dispatch("updateTotalBudget", this.calculateBudgetMath(totalBudget));
+      this.$store.dispatch("updateTotalSpend", this.calculateBudgetMath(totalSpend));
     },
 
-    updateTransactionArray(transactionParameter) {
-      this.transactions = transactionParameter;
+    calculateBudgetMath(amount) {
+      return Math.round(amount * 100) / 100
     },
 
     async fetchAllCategories() {
       const response = await CategoriesService.fetchAllCategories();
-      this.categories = response.data.categories;
-      this.$store.dispatch("updateCategories", this.categories);
+      let categories = response.data.categories;
+      this.$store.dispatch("updateCategories", categories);
     },
 
-    async addCategory() {
-      if (this.newCategory != "" && this.newCategory != null) {
+     async addCategory() {
+      this.categoryExists = false;
+      this.categories.forEach(category => {
+        if(category.name === this.newCategory){
+          this.categoryExists = true;
+        };
+      })
+      if (this.newCategory && this.categoryExists === false) {
+        $("#closeCategory").trigger('click');
         await CategoriesService.addCategory({
           name: this.newCategory
         });
         this.fetchAllCategories();
         this.resetNewCategory();
+      } else {
+        this.categoryValidated = true;
       }
     },
 
-    resetTransaction() {
+    async resetTransaction() {
       this.amount = null;
       this.setDate();
       this.endDate = null;
-      this.wiederkehrend = "Nie";
-      this.category = "Allgemein";
-      this.note = null;
+      this.wiederkehrend = 'Nie';
+      this.category = 'Allgemein';
+      this.title = '';
       this.t_id = null;
-      this.positiveAmount = null;
-
-      $(".needs-validation-Minus").removeClass("was-validated");
-      $(".needs-validation-Plus").removeClass("was-validated");
-      $(".needs-validation-Edit").removeClass("was-validated");
+      this.categoryValidated = false;
+      this.transactionValidated = false;
+      this.endDateValidated = false;
+      this.modalNew = true;
     },
 
-    async addTransaction() {
-      var finallyAddTransaction = false;
-      console.log("TADFJJJJJJJ")
+    validateTransaction() {
+      let currentDate = new Date()
+      let validDateInFuture = false;
+      if(this.endDate && this.endDate.length === 10){
+        let endDateDate;
+        endDateDate = new Date(this.endDate)
+        if(currentDate < endDateDate){
+          validDateInFuture = true;
+        }
+      } 
+
+      let finallyAddTransaction = false;
+      let amountDateCategoryNoteNotNull = this.amount && this.date && this.category && this.title;
+      let wiederkehrend = this.wiederkehrend !== "Nie";
+
       //Wenn wiederkehrend, aber kein Enddatum festgelegt wurde
       if (
-        this.wiederkehrend != "Nie" &&
-        this.endDate == null &&
-        this.amount != "" &&
-        this.amount != null &&
-        this.date != "" &&
-        this.date != null &&
-        this.category != "" &&
-        this.category != null &&
-        this.note != null
+        wiederkehrend &&
+        !this.endDate &&
+        amountDateCategoryNoteNotNull
       ) {
         this.endDate = new Date().getFullYear() + 1 + "-01-01";
-        $("#endDateModal").modal("show");
+        $("#endDateModal").modal('show');
       }
-      //Wenn wiederkehrend, und Enddatum festgelegt wurde
+      //Wenn wiederkehrend, und gültiges Enddatum festgelegt wurde
       else if (
-        this.wiederkehrend != "Nie" &&
-        this.endDate != null &&
-        this.amount != "" &&
-        this.amount != null &&
-        this.date != "" &&
-        this.date != null &&
-        this.category != "" &&
-        this.category != null &&
-        this.note != null
+        wiederkehrend &&
+        this.endDate &&
+        validDateInFuture &&
+        amountDateCategoryNoteNotNull
       ) {
-        $("#endDateModal").modal("hide");
-        $("#newMinusModal").modal("hide");
-        $("#newPlusModal").modal("hide");
+        $("#endDateModal").modal('hide')
         finallyAddTransaction = true;
+      }
+      //Wenn wiederkehrend, aber Enddatum nicht gültig
+      else if (
+        wiederkehrend &&
+        this.endDate &&
+        amountDateCategoryNoteNotNull
+      ) {
+        this.endDateValidated = true;
       }
       //Wenn nicht wiederkehrend
       else if (
-        this.wiederkehrend == "Nie" &&
-        this.amount != "" &&
-        this.amount != null &&
-        this.date != "" &&
-        this.date != null &&
-        this.category != "" &&
-        this.category != null &&
-        this.note != null
+        !wiederkehrend &&
+        amountDateCategoryNoteNotNull
       ) {
         finallyAddTransaction = true;
       }
-      if (finallyAddTransaction == true) {
-        if (this.positiveAmount == false) {
-          this.amount = this.amount * -1;
+      if(finallyAddTransaction){
+        $("#transactionModal").modal('hide')
+        if(this.modalNew === true){
+          this.addTransaction()
+        } else {
+          this.updateTransaction()
         }
-        if (this.wiederkehrend == "Monat" && this.endDate != null) {
-          var beginDate = new Date(this.date);
-          var beginDateDay = beginDate.getDate();
-          var beginDateMonth = beginDate.getMonth() + 1;
-          var beginDateYear = beginDate.getFullYear();
-
-          var endingDate = new Date(this.endDate);
-          var endingDateDay = endingDate.getDate();
-          var endingDateMonth = endingDate.getMonth() + 1;
-          var endingDateYear = endingDate.getFullYear();
-          endingDate = new Date(endingDateYear, endingDateMonth, endingDateDay);
-          var dateToAdd = new Array();
-          while (beginDate != -1) {
-            if (beginDateMonth > 12) {
-              beginDateMonth = 1;
-              beginDateYear += 1;
-            }
-
-            var beginDateDayHelp = beginDateDay;
-
-            if (
-              beginDateDayHelp == 31 &&
-              (beginDateMonth == 4 ||
-                beginDateMonth == 6 ||
-                beginDateMonth == 9 ||
-                beginDateMonth == 11)
-            ) {
-              beginDateDayHelp = 30;
-              console.log("Auf 30 gesetzt" + beginDateMonth);
-            } else if (beginDateDay > 28 && beginDateMonth == 2) {
-              beginDateDayHelp == 28;
-              console.log("Auf 28 gesetzt" + beginDateMonth);
-            }
-            var beginDateMonthHelp = beginDateMonth + 1;
-            var beginDateDayCheck = 31;
-            console.log(beginDateMonthHelp);
-
-            if (
-              beginDateMonthHelp == 4 ||
-              beginDateMonthHelp == 6 ||
-              beginDateMonthHelp == 9 ||
-              beginDateMonthHelp == 11
-            ) {
-              beginDateDayCheck = 30;
-            } else if (beginDateMonthHelp == 2) {
-              beginDateDayCheck = 28;
-            }
-            console.log(beginDateDayCheck + " Check Zahl");
-
-            var beginDateHelp = new Date(
-              beginDateYear,
-              beginDateMonth,
-              beginDateDayCheck
-            );
-            console.log(beginDateHelp);
-            if (beginDateHelp < endingDate) {
-              //console.log(new Date(beginDateYear, beginDateMonth, beginDateDayHelp))
-              dateToAdd.push(
-                new Date(beginDateYear, beginDateMonth, beginDateDayHelp)
-              );
-              beginDateMonth += 1;
-            } else {
-              console.log(
-                new Date(beginDateYear, beginDateMonth, beginDateDayHelp)
-              );
-              //dateToAdd.push(new Date(beginDateYear, beginDateMonth, beginDateDayHelp))
-              break;
-            }
-          }
-        }
-        await TransactionsService.addTransaction({
-          amount: this.amount,
-          date: this.date,
-          wiederkehrend: this.wiederkehrend,
-          category: this.category,
-          note: this.note
-        });
-        this.resetTransaction();
-        this.fetchAllTransactions();
-
-        $("#newMinusModal").modal("hide");
-        $("#newPlusModal").modal("hide");
       }
+    },
+
+    getDate(date){
+      date = new Date(date);
+      let day = date.getDate();
+      let month = date.getMonth();
+      let year = date.getFullYear();
+      if (month > 12) {
+        month = 1;
+        year += 1;
+      }
+      return new Date(year, month, day);
+    },
+
+    async addTransaction() {
+      //Bei Ausgaben wird der Betrag auf Minus gesetzt
+      if (this.modalTitle === 'Neue Ausgabe hinzufügen') {
+        this.amount = this.amount * -1;
+      }
+      if (this.wiederkehrend === "Monat") {
+        //Datum des Beginns festlegen
+        let beginDate = this.getDate(this.date);
+        
+        //End Datum festlegen
+        let endingDate = this.getDate(this.endDate);
+        
+        let datesToAdd = []
+        do {
+          datesToAdd.push(beginDate)
+          beginDate = new Date(beginDate.setMonth(beginDate.getMonth()+1));
+          
+        } while(beginDate < endingDate)
+        console.log(datesToAdd)
+
+
+
+
+      }/*
+      await TransactionsService.addTransaction({
+        amount: this.amount,
+        date: this.date,
+        wiederkehrend: this.wiederkehrend,
+        category: this.category,
+        note: this.title
+      });*/
+      this.resetTransaction();
+      this.fetchAllTransactions();
+      $('#closeTransaction').trigger('click');
     },
 
     async updateTransaction() {
-      if (
-        this.amount != "" &&
-        this.amount != null &&
-        this.date != "" &&
-        this.date != null &&
-        this.category != "" &&
-        this.category != null &&
-        this.note != null
-      ) {
-        var indexToEdit = "";
-        for (var a = 0; a < this.transactions.length; a++) {
-          if (this.transactions[a]._id == this.t_id) {
-            indexToEdit = a;
-          }
+      /**
+       * Die nachfolgenden Zeilen setzten die neuen Werte der betroffenen Transaktion im Array. Anschließend erfolgt der Aufruf der Update API.
+       * Dies hat den Vorteil, dass kein erneutes GET für die Transaktionen benötigt wird.
+       * ALTERNATIVE: Erneuter fetchAllTransactions() Aufruf
+       */
+      let transactionToEdit = this.transactions.filter((transaction) => {
+        if(transaction._id == this.t_id) {
+          return transaction;
         }
-        this.transactions[indexToEdit].amount.$numberDecimal = this.amount;
-        this.transactions[indexToEdit].date = this.getNormalFormatTime(
-          this.date
-        );
-        this.transactions[indexToEdit].wiederkehrend = this.wiederkehrend;
-        this.transactions[indexToEdit].category = this.category;
-        this.transactions[indexToEdit].note = this.note;
+      })[0]
 
-        await TransactionsService.updateTransaction({
-          id: this.t_id,
-          amount: this.amount,
-          date: this.date,
-          wiederkehrend: this.wiederkehrend,
-          category: this.category,
-          note: this.note
-        });
-        this.resetTransaction();
-        this.calculateAmounts();
-        this.$store.dispatch("updateHelperReloadTransactions", 1);
-      }
+      transactionToEdit.amount.$numberDecimal = this.amount;
+      transactionToEdit.date = this.getNormalFormatTime(
+        this.date
+      );
+      transactionToEdit.wiederkehrend = this.wiederkehrend;
+      transactionToEdit.category = this.category;
+      transactionToEdit.note = this.title;
+
+      await TransactionsService.updateTransaction({
+        id: this.t_id,
+        amount: this.amount,
+        date: this.date,
+        wiederkehrend: this.wiederkehrend,
+        category: this.category,
+        note: this.title
+      });
+      this.resetTransaction();
+      this.calculateAmounts();
+      this.$store.dispatch("updateHelperReloadTransactions", 1);
     },
 
-    fillModal(id, amount, date, wiederkehrend, category, note) {
+    fillModal(id, amount, date, wiederkehrend, category, title) {
       this.t_id = id;
       this.amount = amount;
       this.date = this.getDatabaseFormatTime(date).substring(0, 10);
       this.wiederkehrend = wiederkehrend;
       this.category = category;
-      this.note = note;
+      this.title = title;
     },
 
     getNormalFormatTime(time) {
@@ -1101,75 +726,8 @@ export default {
     },
     resetNewCategory() {
       this.newCategory = "";
-      $(".needs-validation-addCategory").removeClass("was-validated");
+      this.categoryValidated = false;
     },
-    validate: function(form, e){
-      if(this.t_id != null){
-        form = 'edit'
-      }
-      console.log(form)
-      if (form == "edit"){
-        e.preventDefault()
-      }
-      let valid = true;
-
-      if(!this.amount){
-        valid = false;
-      }
-      if(this.date == ""){
-        valid = false;
-      }
-      if(!this.note){
-        valid = false;
-      }
-
-      if(form == 'category') {
-        e.preventDefault();
-        if (this.newCategory != "") {
-          this.addCategory();
-          $("#closeCategory").trigger('click');
-        } else {
-          $(".needs-validation-addCategory").addClass("was-validated");
-        }
-      } else if(!valid) {
-        $(".needs-validation-Edit").addClass("was-validated")
-        $(".needs-validation-Minus").addClass("was-validated")
-        $(".needs-validation-Plus").addClass("was-validated")
-        e.preventDefault();
-      } else if (!(this.wiederkehrend == "Nie") && this.endDate != null) {
-        if (form == 'add') {
-          this.addTransaction();
-        }
-        else if (form == 'edit') {
-          this.updateTransaction();
-        }
-      } else if (!(this.wiederkehrend == "Nie")) {
-        if ($('#endDateModal').is(':visible')) {
-          $(".needs-validation-Enddate").addClass("was-validated");
-        } else {
-          $(".needs-validation-Enddate").removeClass("was-validated");
-          $("#endDateModal").modal("show");
-        }
-        e.preventDefault();
-      } else {
-        if (form == 'add') {
-          this.addTransaction();
-        }
-        else if (form == 'edit') {
-          $("#closeEditTransaction").trigger('click');
-          this.updateTransaction();
-        }
-      }
-      
-      
-      
-    }
   }
 };
-
-//       var formsMinus = $(".needs-validation-Minus");
-//       var formsPlus = $(".needs-validation-Plus");
-//       var formsEdit = $(".needs-validation-Edit");
-//       var formsAddCategory = $(".needs-validation-addCategory");
-
 </script>

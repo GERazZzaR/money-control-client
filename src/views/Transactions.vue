@@ -83,25 +83,12 @@
         </h4>
       </div>
     </div>
-    <p id="noTransactions">Es konnten keine Transaktionen gefunden werden! :-(</p>
+    <p v-if="transactionsToDisplay.length === 0">Es konnten keine Transaktionen gefunden werden! :-(</p>
     <div class="card-columns">
       <div
         class="card m-2"
-        v-for="transaction in transactions"
+        v-for="transaction in transactionsToDisplay"
         :key="transaction.id"
-        v-bind:class="{
-          plus: transaction.amount.$numberDecimal > 0,
-          minus: transaction.amount.$numberDecimal < 0,
-          [transaction.category]: transaction.amount.$numberDecimal != 0,
-          [transaction.date[6] +
-          transaction.date[7] +
-          transaction.date[8] +
-          transaction.date[9]]: transaction.amount.$numberDecimal != 0,
-          [transaction.date[3] + transaction.date[4]]:
-            transaction.amount.$numberDecimal != 0,
-          ['money' + transaction.amount.$numberDecimal]:
-            transaction.amount.$numberDecimal != 0
-        }"
       >
         <div
           class="card-header bg-primary"
@@ -152,6 +139,8 @@
               <a
                 class="btn btn-outline-primary mr-3"
                 @click="
+                  $parent.modalTitle = 'Transaktion bearbeiten',
+                  $parent.modalNew = false,
                   $parent.fillModal(
                     transaction._id,
                     transaction.amount.$numberDecimal,
@@ -161,16 +150,14 @@
                     transaction.note
                   )
                 "
-                href="#"
                 data-toggle="modal"
-                data-target="#updateTransactionModal"
+                data-target="#transactionModal"
                 data-dismiss="modal"
                 >Bearbeiten</a
               >
               <a
                 class="btn btn-outline-primary"
-                href="#"
-                @click="setTransactionToDelete(transaction._id)"
+                @click="transactionToDelete = transaction._id"
                 data-toggle="modal"
                 data-target="#deleteModal"
                 >Löschen</a
@@ -211,7 +198,7 @@
               <div class="col-mx-auto ml-3">
                 <button
                   type="button"
-                  @click="setTransactionToDelete('')"
+                  @click="transactionToDelete = ''"
                   class="btn btn-secondary mt-1"
                   data-dismiss="modal"
                   aria-label="Close"
@@ -248,11 +235,12 @@ export default {
   components: {},
   data() {
     return {
-      selectedCategory: "Alle Kategorien",
-      selectedTransaction: "Alle Transaktionen",
-      selectedMonth: "Alle Monate",
-      selectedYear: "Alle Jahre",
-      transactionToDelete: "",
+      transactionsToDisplay: [],
+      selectedCategory: 'Alle Kategorien',
+      selectedTransaction: 'Alle Transaktionen',
+      selectedMonth: 'Alle Monate',
+      selectedYear: 'Alle Jahre',
+      transactionToDelete: '',
       amountSelected: 0
     };
   },
@@ -265,188 +253,66 @@ export default {
     }
   },
   mounted: function() {
-    this.setDate();
+    this.selectedYear = new Date().getFullYear();
+    this.selectedMonth = String(new Date().getMonth() + 1);
+    if (this.selectedMonth.length === 1) {
+      this.selectedMonth = "0" + this.selectedMonth;
+    }
+    this.changeSelection();
   },
   methods: {
     async deleteTransaction() {
       await TransactionsService.deleteTransaction(this.transactionToDelete);
-      var indexToDelete = "";
-      for (var a = 0; a < this.transactions.length; a++) {
-        if (this.transactions[a]._id == this.transactionToDelete) {
-          indexToDelete = a;
+      let indexToDelete;
+      await this.transactions.forEach((transaction, index) => {
+        if (transaction._id === this.transactionToDelete) {
+          indexToDelete = index;
         }
-      }
+      })
       await this.transactions.splice(indexToDelete, 1);
-      this.changeSelection()
-    },
-    setTransactionToDelete(id) {
-      this.transactionToDelete = id;
+      this.changeSelection();
     },
     changeSelection() {
-      $("#noTransactions").hide()
-      $(".minus").hide();
-      $(".plus").hide();
-      if (this.selectedYear == "Alle Jahre") {
-        if (this.selectedMonth == "Alle Monate") {
-          if (this.selectedCategory == "Alle Kategorien") {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(".plus").show();
-              $(".minus").show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(".plus").show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(".minus").show();
-            }
+      this.transactionsToDisplay = [];
+      let bedingung; 
+      this.transactions.forEach(transaction => {
+        let positiveAmount = transaction.amount.$numberDecimal > 0;
+        let categoryMatch = transaction.category === this.selectedCategory;
+        let transactionMonth = transaction.date[3] + transaction.date[4];
+        let monthMatch = transactionMonth === this.selectedMonth;
+        let transactionYear = transaction.date[6] + transaction.date[7] + transaction.date[8] + transaction.date[9];
+        let yearMatch = transactionYear === String(this.selectedYear);
+
+        let bedingung = true;
+        if(this.selectedYear !== "Alle Jahre"){
+          bedingung = bedingung && yearMatch;
+        }
+        if(this.selectedMonth !== "Alle Monate"){
+          bedingung = bedingung && monthMatch;
+        }
+        if(this.selectedCategory !== "Alle Kategorien"){
+          bedingung = bedingung && categoryMatch;
+        }
+        if(this.selectedTransaction !== "Alle Transaktionen"){
+          if (this.selectedTransaction == "Einnahmen"){
+            bedingung = bedingung && positiveAmount;
           } else {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(".plus." + this.selectedCategory).show();
-              $(".minus." + this.selectedCategory).show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(".plus." + this.selectedCategory).show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(".minus." + this.selectedCategory).show();
-            }
-          }
-        } else {
-          $(".minus").hide();
-          $(".plus").hide();
-          if (this.selectedCategory == "Alle Kategorien") {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(".plus." + this.selectedMonth).show();
-              $(".minus." + this.selectedMonth).show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(".plus." + this.selectedMonth).show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(".minus." + this.selectedMonth).show();
-            }
-          } else {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(
-                ".plus." + this.selectedCategory + "." + this.selectedMonth
-              ).show();
-              $(
-                ".minus." + this.selectedCategory + "." + this.selectedMonth
-              ).show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(
-                ".plus." + this.selectedCategory + "." + this.selectedMonth
-              ).show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(
-                ".minus." + this.selectedCategory + "." + this.selectedMonth
-              ).show();
-            }
+            bedingung = bedingung && !positiveAmount;
           }
         }
-      } else {
-        if (this.selectedMonth == "Alle Monate") {
-          if (this.selectedCategory == "Alle Kategorien") {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(".plus." + this.selectedYear).show();
-              $(".minus." + this.selectedYear).show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(".plus." + this.selectedYear).show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(".minus." + this.selectedYear).show();
-            }
-          } else {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(
-                ".plus." + this.selectedCategory + "." + this.selectedYear
-              ).show();
-              $(
-                ".minus." + this.selectedCategory + "." + this.selectedYear
-              ).show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(
-                ".plus." + this.selectedCategory + "." + this.selectedYear
-              ).show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(
-                ".minus." + this.selectedCategory + "." + this.selectedYear
-              ).show();
-            }
-          }
-        } else {
-          if (this.selectedCategory == "Alle Kategorien") {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(".plus." + this.selectedMonth + "." + this.selectedYear).show();
-              $(
-                ".minus." + this.selectedMonth + "." + this.selectedYear
-              ).show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(".plus." + this.selectedMonth + "." + this.selectedYear).show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(
-                ".minus." + this.selectedMonth + "." + this.selectedYear
-              ).show();
-            }
-          } else {
-            if (this.selectedTransaction == "Alle Transaktionen") {
-              $(
-                ".plus." +
-                  this.selectedCategory +
-                  "." +
-                  this.selectedMonth +
-                  "." +
-                  this.selectedYear
-              ).show();
-              $(
-                ".minus." +
-                  this.selectedCategory +
-                  "." +
-                  this.selectedMonth +
-                  "." +
-                  this.selectedYear
-              ).show();
-            } else if (this.selectedTransaction == "Einnahmen") {
-              $(
-                ".plus." +
-                  this.selectedCategory +
-                  "." +
-                  this.selectedMonth +
-                  "." +
-                  this.selectedYear
-              ).show();
-            } else if (this.selectedTransaction == "Ausgaben") {
-              $(
-                ".minus." +
-                  this.selectedCategory +
-                  "." +
-                  this.selectedMonth +
-                  "." +
-                  this.selectedYear
-              ).show();
-            }
-          }
+        if(bedingung){
+          this.transactionsToDisplay.push(transaction);
         }
-      }
-      if($(".card").is(":visible") == false){
-        $("#noTransactions").show();
-      }
+      })
       this.calculateAmount();
     },
     calculateAmount() {
       this.amountSelected = 0;
-      for (var a = 0; a < $("p:visible.amountx").length; a++) {
-        var amount = $("p:visible.amountx")[a].textContent.slice(
-          0,
-          $("p:visible.amountx")[a].textContent.length - 2
-        );
-        this.amountSelected += parseInt(amount);
-      }
+      this.transactionsToDisplay.forEach(transaction => {
+        this.amountSelected += Number(transaction.amount.$numberDecimal);
+      })
+      this.$parent.calculateAmounts();
     },
-    setDate() {
-      this.selectedYear = new Date().getFullYear();
-      var currentMonth = new Date().getMonth() + 1;
-      currentMonth.toString();
-      if (new Date().getMonth() + 1 < 10) {
-        this.selectedMonth = "0" + currentMonth;
-      } else {
-        this.selectedMonth = currentMonth;
-      }
-      this.changeSelection();
-    }
   }
 };
 </script>

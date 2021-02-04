@@ -1,39 +1,41 @@
 <template>
   <div class="dashboard container">
-    <div class="form-check form-check-inline">
-      <input class="form-check-input" @change="$store.dispatch('updateSelectedMonth', new Date().getMonth() + 1), $store.dispatch('updateSelectedYear', new Date().getFullYear()), $store.dispatch('updateMonatJahr', 'Monat'), $parent.calculateAmounts(), getDate()" type="radio" name="monatJahr" id="monatJahrRadios1" value="Monat" checked>
-      <label class="form-check-label" for="exampleRadios1">
-        Monat
-      </label>
-    </div>
-    <div class="form-check form-check-inline">
-      <input class="form-check-input" @change="$store.dispatch('updateMonatJahr', 'Jahr'), $parent.calculateAmounts(), getDate()" type="radio" name="monatJahr" id="monatJahrRadios2" value="Jahr">
-      <label class="form-check-label" for="exampleRadios2">
-        Jahr
-      </label>
-    </div>
-    <div class="row justify-content-center">      
-      <button 
-        type="button" 
-        class="h-50 btn btn-outline-primary mr-3 mt-4 btn-sm"
-        @click="
-          changeMonthYear(-1),
-          getDate()
-        "
-      >
-        <span class="material-icons">chevron_left</span>
-      </button>
-      <div class="col-5"><h1 class="my-3">{{ date }}</h1></div>
-      <button 
-        type="button" 
-        class="h-50 btn btn-outline-primary ml-3 mt-4 btn-sm"
-        @click="
-          changeMonthYear(1),
-          getDate()
-        "
-      >
-        <span class="material-icons">chevron_right</span>
-      </button>
+    <div class="bg-white pt-3 mt-3 mb-3" style="position: sticky; z-index: 999; top:80px;">
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" @change="$store.dispatch('updateSelectedMonth', new Date().getMonth() + 1), $store.dispatch('updateSelectedYear', new Date().getFullYear()), $store.dispatch('updateMonatJahr', 'Monat'), $parent.calculateAmounts(), getDate()" type="radio" name="monatJahr" id="monatJahrRadios1" value="Monat" checked>
+        <label class="form-check-label" for="exampleRadios1">
+          Monat
+        </label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" @change="$store.dispatch('updateMonatJahr', 'Jahr'), $parent.calculateAmounts(), getDate()" type="radio" name="monatJahr" id="monatJahrRadios2" value="Jahr">
+        <label class="form-check-label" for="exampleRadios2">
+          Jahr
+        </label>
+      </div>
+      <div class="row justify-content-center">      
+        <button 
+          type="button" 
+          class="h-50 btn btn-outline-primary mr-3 mt-4 btn-sm"
+          @click="
+            changeMonthYear(-1),
+            getDate()
+          "
+        >
+          <span class="material-icons">chevron_left</span>
+        </button>
+        <div class="col-5"><h1 class="my-3">{{ date }}</h1></div>
+        <button 
+          type="button" 
+          class="h-50 btn btn-outline-primary ml-3 mt-4 btn-sm"
+          @click="
+            changeMonthYear(1),
+            getDate()
+          "
+        >
+          <span class="material-icons">chevron_right</span>
+        </button>
+      </div>
     </div>
     <DiagramInOut />
     <div class="row justify-content-between">
@@ -42,8 +44,9 @@
           type="button"
           class="btn btn-danger btn-big"
           data-toggle="modal"
-          data-target="#newMinusModal"
+          data-target="#transactionModal"
           data-dismiss="modal"
+          @click="$parent.modalTitle = 'Neue Ausgabe hinzufügen'"
         >
           <span class="material-icons">remove_circle</span>
         </button>
@@ -53,8 +56,9 @@
           type="button"
           class="btn btn-success btn-big"
           data-toggle="modal"
-          data-target="#newPlusModal"
+          data-target="#transactionModal"
           data-dismiss="modal"
+          @click="$parent.modalTitle = 'Neue Einnahme hinzufügen'"
         >
           <span class="material-icons">add_circle</span>
         </button>
