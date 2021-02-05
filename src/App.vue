@@ -660,14 +660,14 @@ export default {
 
 
 
-      }/*
+      }
       await TransactionsService.addTransaction({
         amount: this.amount,
         date: this.date,
         wiederkehrend: this.wiederkehrend,
         category: this.category,
         note: this.title
-      });*/
+      });
       this.resetTransaction();
       this.fetchAllTransactions();
       $('#closeTransaction').trigger('click');
