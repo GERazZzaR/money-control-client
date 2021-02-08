@@ -71,7 +71,7 @@ export default {
         this.date = month[d.getMonth()] + " " + d.getFullYear();
       }
     },
-    changeMonthYear(number){
+    changeMonthYear(number) {
       if (this.$route.path === "/fixcosts" || this.monatJahr === "Jahr") {
           if (number == 1){
             this.$store.dispatch("updateSelectedYear", this.selectedYear + 1)
@@ -101,7 +101,7 @@ export default {
       if (this.$route.path === '/dashboard'){
           this.$parent.callDashboard();
       }
-    }
+    },
   }
 };
 </script>

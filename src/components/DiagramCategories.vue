@@ -29,22 +29,22 @@ export default {
   },
   watch: {
     availableBudget() {
-      this.initChart();
+      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
     },
     monatJahr() {
-      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
+      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
     },
     selectedInOut() {
-      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
+      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
     },
     selectedCategory() {
-      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
+      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
     },
     selectedMonth() {
-      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
+      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
     },
     selectedYear() {
-        if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
+        if (this.$route.path === "/dashboard") this.changeSelectedCategory();
         else if (this.$route.path === "/fixcosts") this.fetchRecurringCosts();
     }
   },

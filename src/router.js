@@ -26,11 +26,6 @@ export default new Router({
       path: "/transactions",
       name: "Transactions",
       component: () => import("./views/Transactions.vue"),
-    },
-    {
-      path: "/transactionsapi",
-      name: "TransactionsAPI",
-      component: () => import("./views/TransactionsAPI.vue"),
     }
   ]
 });

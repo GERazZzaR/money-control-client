@@ -27,11 +27,6 @@
               >Transaktionen</router-link
             >
           </li>
-          <li class="nav-item active">
-            <router-link class="nav-link" to="/transactionsapi"
-              >Transactions API</router-link
-            >
-          </li>
         </ul>
       </div>
   </nav>

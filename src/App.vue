@@ -507,27 +507,16 @@ export default {
       let totalBudget = 0.0;
       let totalSpend = 0.0;
       this.transactions.forEach(transaction => {
+        if (transaction.wiederkehrend === 'Jahr' && this.monatJahr === 'Monat') return;
         let transactionMonth = parseInt(transaction.date[3] + transaction.date[4])
         let transactionYear = parseInt(transaction.date[6] + transaction.date[7] + transaction.date[8] + transaction.date[9])
         let amount = Math.round(transaction.amount.$numberDecimal * 100) / 100
-
-        if (this.monatJahr === "Monat") {
-          if (transactionMonth === this.selectedMonth && transactionYear === this.selectedYear) {
-            availableBudget = availableBudget + amount;
-            if (amount > 0) {
-              totalBudget += amount;
-            } else {
-              totalSpend += amount;
-            }
-          }
-        } else {
-          if (transactionYear === this.selectedYear) {
-            availableBudget += amount;
-            if (amount > 0) {
-              totalBudget += amount;
-            } else {
-              totalSpend += amount;
-            }
+        if ((this.monatJahr === "Monat" && transactionMonth === this.selectedMonth && transactionYear === this.selectedYear) || (this.monatJahr !== "Monat" && transactionYear === this.selectedYear)) {
+          availableBudget += amount;
+          if (amount > 0) {
+            totalBudget += amount;
+          } else {
+            totalSpend += amount;
           }
         }
       })
