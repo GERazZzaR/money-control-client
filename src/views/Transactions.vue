@@ -274,7 +274,6 @@ export default {
     },
     changeSelection() {
       this.transactionsToDisplay = [];
-      let bedingung; 
       this.transactions.forEach(transaction => {
         let positiveAmount = transaction.amount.$numberDecimal > 0;
         let categoryMatch = transaction.category === this.selectedCategory;

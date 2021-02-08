@@ -221,14 +221,23 @@
               <div class="form-group">
                 <label>Datum *</label>
                 <input
+                  v-if="wiederkehrend==='Monat'"
                   v-bind:class="{ 'is-invalid': endDateValidated }"
-                  type="date"
+                  type="month"
                   class="form-control"
                   v-model="endDate"
                   id="datetimepickerEndDate"
                   placeholder="Gib das Datum ein."
                   required
                 />
+                <select
+                  v-if="wiederkehrend==='Jahr'"
+                  class="form-control my-3"
+                  v-model="endDate"
+                  required
+                >
+                <option v-for="year in availableYears" :key="year">{{year}}</option>
+                </select>
                 <div class="invalid-feedback">
                   Bitte gib ein gültiges Datum in der Zukunft ein.
                 </div>
@@ -238,7 +247,7 @@
                 <div class="col-mx-auto ml-3">
                   <button
                     type="button"
-                    @click="endDate = null"
+                    @click="endDateSet = false"
                     class="btn btn-secondary mt-1"
                     data-dismiss="modal"
                     aria-label="Close"
@@ -363,8 +372,9 @@
   }
 }
 
-form label {
+form label, .invalid-feedback {
   float:left;
+  text-align: left;
 }
 
 #app {
@@ -404,13 +414,15 @@ export default {
       wiederkehrend: 'Nie',
       category: 'Allgemein',
       title: '',
-      endDate: null,
+      endDate: new Date().getFullYear(),
+      endDateSet: false,
       t_id: null,
       newCategory: '',
       transactionValidated: false,
       categoryValidated: false,
       categoryExists: false,
       endDateValidated: false,
+      availableYears: [new Date().getFullYear(), new Date().getFullYear()+1, new Date().getFullYear()+2, new Date().getFullYear()+3, new Date().getFullYear()+4, new Date().getFullYear()+5]
     }
   },
   created() {
@@ -438,6 +450,7 @@ export default {
     },
     endDate: function(){
       this.endDateValidated = false;
+      this.endDateSet = true;
     },
   },
   methods: {
@@ -533,7 +546,7 @@ export default {
       this.$store.dispatch("updateCategories", categories);
     },
 
-     async addCategory() {
+    async addCategory() {
       this.categoryExists = false;
       this.categories.forEach(category => {
         if(category.name === this.newCategory){
@@ -555,7 +568,8 @@ export default {
     async resetTransaction() {
       this.amount = null;
       this.setDate();
-      this.endDate = null;
+      this.endDate = new Date().getFullYear();
+      this.endDateSet = false;
       this.wiederkehrend = 'Nie';
       this.category = 'Allgemein';
       this.title = '';
@@ -569,11 +583,15 @@ export default {
     validateTransaction() {
       let currentDate = new Date()
       let validDateInFuture = false;
-      if(this.endDate && this.endDate.length === 10){
-        let endDateDate;
-        endDateDate = new Date(this.endDate)
-        if(currentDate < endDateDate){
+      if(this.endDateSet){
+        if (this.wiederkehrend === "Jahr"){
           validDateInFuture = true;
+        } else {
+          let endDateDate;
+          endDateDate = new Date(this.endDate)
+          if(currentDate < endDateDate){
+            validDateInFuture = true;
+          }
         }
       } 
 
@@ -584,16 +602,20 @@ export default {
       //Wenn wiederkehrend, aber kein Enddatum festgelegt wurde
       if (
         wiederkehrend &&
-        !this.endDate &&
+        !this.endDateSet &&
         amountDateCategoryNoteNotNull
       ) {
-        this.endDate = new Date().getFullYear() + 1 + "-01-01";
+        if (this.wiederkehrend === "Monat") {
+          this.endDate = new Date().getFullYear() + "-12";
+        } else if (this.wiederkehrend === "Jahr") {
+          this.endDate = String(new Date().getFullYear());
+        }
         $("#endDateModal").modal('show');
       }
       //Wenn wiederkehrend, und gültiges Enddatum festgelegt wurde
       else if (
         wiederkehrend &&
-        this.endDate &&
+        this.endDateSet &&
         validDateInFuture &&
         amountDateCategoryNoteNotNull
       ) {
@@ -603,7 +625,7 @@ export default {
       //Wenn wiederkehrend, aber Enddatum nicht gültig
       else if (
         wiederkehrend &&
-        this.endDate &&
+        this.endDateSet &&
         amountDateCategoryNoteNotNull
       ) {
         this.endDateValidated = true;
@@ -642,35 +664,59 @@ export default {
       if (this.modalTitle === 'Neue Ausgabe hinzufügen') {
         this.amount = this.amount * -1;
       }
-      if (this.wiederkehrend === "Monat") {
+      let datesToAdd = []
+      if (this.wiederkehrend === "Nie") {
+        datesToAdd.push(this.date)
+      } else {
         //Datum des Beginns festlegen
         let beginDate = this.getDate(this.date);
+        beginDate.setDate(1)
         
         //End Datum festlegen
         let endingDate = this.getDate(this.endDate);
         
-        let datesToAdd = []
-        do {
-          datesToAdd.push(beginDate)
-          beginDate = new Date(beginDate.setMonth(beginDate.getMonth()+1));
-          
-        } while(beginDate < endingDate)
-        console.log(datesToAdd)
+        let year = String(beginDate.getFullYear())
+        let month = String(beginDate.getMonth()+1)
+        let toAdd;
 
-
-
-
+        if (this.wiederkehrend === "Monat") {
+          do {
+            if(month.length === 1){
+              month = "0" + month;
+            }
+            toAdd = year + "-" + month + "-01"
+            datesToAdd.push(toAdd)
+            beginDate.setMonth(beginDate.getMonth()+1);
+            year = String(beginDate.getFullYear())
+            month = String(beginDate.getMonth()+1);
+          } while(beginDate <= endingDate)
+        } else if (this.wiederkehrend === "Jahr") {
+          do {
+            toAdd = year + "-01-01"
+            datesToAdd.push(toAdd)
+            beginDate.setFullYear(beginDate.getFullYear()+1);
+            year = String(beginDate.getFullYear())
+          } while(beginDate.getFullYear() <= endingDate.getFullYear())
+        }
       }
+      await datesToAdd.forEach(date => {
+        this.callAddTransactionApi(date);
+      })
+      
+      this.resetTransaction();
+      this.fetchAllTransactions();
+      this.calculateAmounts();
+      $('#closeTransaction').trigger('click');
+    },
+
+    async callAddTransactionApi(date) {
       await TransactionsService.addTransaction({
         amount: this.amount,
-        date: this.date,
+        date: date,
         wiederkehrend: this.wiederkehrend,
         category: this.category,
         note: this.title
       });
-      this.resetTransaction();
-      this.fetchAllTransactions();
-      $('#closeTransaction').trigger('click');
     },
 
     async updateTransaction() {

@@ -1,42 +1,6 @@
 <template>
   <div class="dashboard container">
-    <div class="bg-white pt-3 mt-3 mb-3" style="position: sticky; z-index: 999; top:80px;">
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" @change="$store.dispatch('updateSelectedMonth', new Date().getMonth() + 1), $store.dispatch('updateSelectedYear', new Date().getFullYear()), $store.dispatch('updateMonatJahr', 'Monat'), $parent.calculateAmounts(), getDate()" type="radio" name="monatJahr" id="monatJahrRadios1" value="Monat" checked>
-        <label class="form-check-label" for="exampleRadios1">
-          Monat
-        </label>
-      </div>
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" @change="$store.dispatch('updateMonatJahr', 'Jahr'), $parent.calculateAmounts(), getDate()" type="radio" name="monatJahr" id="monatJahrRadios2" value="Jahr">
-        <label class="form-check-label" for="exampleRadios2">
-          Jahr
-        </label>
-      </div>
-      <div class="row justify-content-center">      
-        <button 
-          type="button" 
-          class="h-50 btn btn-outline-primary mr-3 mt-4 btn-sm"
-          @click="
-            changeMonthYear(-1),
-            getDate()
-          "
-        >
-          <span class="material-icons">chevron_left</span>
-        </button>
-        <div class="col-5"><h1 class="my-3">{{ date }}</h1></div>
-        <button 
-          type="button" 
-          class="h-50 btn btn-outline-primary ml-3 mt-4 btn-sm"
-          @click="
-            changeMonthYear(1),
-            getDate()
-          "
-        >
-          <span class="material-icons">chevron_right</span>
-        </button>
-      </div>
-    </div>
+    <MonthYearSelection class="bg-white pt-3 mt-3 mb-3" style="position: sticky; z-index: 999; top:80px;" />
     <DiagramInOut />
     <div class="row justify-content-between">
       <div class="col">
@@ -82,7 +46,22 @@
     </div>
     <hr>
     <h1 class="mt-5">Kategorien</h1>
-    <DiagramCategories />
+    <div class="row justify-content-center">
+      <select v-model="selectedInOut"
+          @change="$store.dispatch('updateSelectedCategory', selectedCategory)"
+          class="form-control w-50 mt-5 mb-3"
+      >
+          <option selected>Ausgaben</option>
+          <option>Einnahmen</option>
+      </select>
+    </div>
+    <div class="row justify-content-center">
+        <select v-model="selectedCategory" class="form-control w-50 mb-5 mt-3" @change="$store.dispatch('updateSelectedCategory', selectedCategory)">
+            <option>Alle Kategorien</option>
+            <option v-for="category in categories" :key="category.id">{{ category.name }}</option>
+        </select>
+    </div>
+    <DiagramCategories ref="diaCats" />
   </div>
 </template>
 
@@ -95,79 +74,48 @@
 
 <script>
 import { mapState } from "vuex";
+import MonthYearSelection from "@/components/MonthYearSelection.vue";
 import DiagramInOut from "@/components/DiagramInOut.vue";
 import DiagramCategories from "@/components/DiagramCategories.vue";
 
 export default {
   name: "Dashboard",
   components: {
+    MonthYearSelection,
     DiagramInOut,
     DiagramCategories
   },
   data() {
     return {
-      date: "",
+      
     };
   },
   mounted() {
-    this.getDate();
+    this.callApp()
   },
   computed: {
-    ...mapState(["totalBudget", "totalSpend", "selectedMonth", "selectedYear", "monatJahr"])
-  },
-  methods: {
-    async getDate() {
-      var d = new Date(this.selectedYear, this.selectedMonth-1);
-      if(this.monatJahr == "Monat"){
-        var month = new Array();
-        month[0] = "Januar";
-        month[1] = "Februar";
-        month[2] = "März";
-        month[3] = "April";
-        month[4] = "Mai";
-        month[5] = "Juni";
-        month[6] = "Juli";
-        month[7] = "August";
-        month[8] = "September";
-        month[9] = "Oktober";
-        month[10] = "November";
-        month[11] = "Dezember";
-        this.date = month[d.getMonth()] + " " + d.getFullYear();
-      }
-      else{
-        this.date = d.getFullYear();
+    ...mapState(["categories", "totalBudget", "totalSpend", "selectedMonth", "selectedYear", "monatJahr", "selectedInOut", "selectedCategory"]),
+    selectedInOut: {
+      get() {
+        return this.$store.state.selectedInOut;
+      },
+      set(value) {
+        this.$store.dispatch('updateSelectedInOut', value);
+        this.$refs.diaCats.initChart();
       }
     },
-    changeMonthYear(number){
-      if(this.monatJahr == "Monat"){
-        if (number == 1){
-          if(this.selectedMonth == 12){
-            this.$store.dispatch("updateSelectedMonth", 1)
-            this.$store.dispatch("updateSelectedYear", this.selectedYear + 1)
-          }
-          else{
-            this.$store.dispatch("updateSelectedMonth", this.selectedMonth + 1)
-          }
-        }
-        else{
-          if(this.selectedMonth == 1){
-            this.$store.dispatch("updateSelectedMonth", 12)
-            this.$store.dispatch("updateSelectedYear", this.selectedYear - 1)
-          }
-          else{
-            this.$store.dispatch("updateSelectedMonth", this.selectedMonth - 1)
-          }
-        }
+    selectedCategory: {
+      get() {
+        return this.$store.state.selectedCategory;
+      },
+      set(value) {
+        this.$store.dispatch('updateSelectedCategory', value);
+        this.$refs.diaCats.initChart();
       }
-      else{
-        if (number == 1){
-          this.$store.dispatch("updateSelectedYear", this.selectedYear + 1)
-        }
-        else{
-          this.$store.dispatch("updateSelectedYear", this.selectedYear - 1)
-        }
-      }
-      
+    }
+  },
+  methods: {
+    callApp() {
       this.$parent.calculateAmounts();
     }
   }

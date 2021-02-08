@@ -15,6 +15,9 @@ export default new Vuex.Store({
     years: [],
     monatJahr: "Monat",
     helperReloadTransactions: 0,
+    selectedInOut: "Ausgaben",
+    selectedCategory: "Alle Kategorien",
+    recurringTransactionsAmount: 0,
   },
   mutations: {
     updateTransactions(state, value) {
@@ -46,6 +49,15 @@ export default new Vuex.Store({
     },
     updateHelperReloadTransactions(state, value) {
       state.helperReloadTransactions += value;
+    },
+    updateSelectedInOut(state, value) {
+      state.selectedInOut = value;
+    },
+    updateSelectedCategory(state, value) {
+      state.selectedCategory = value;
+    },
+    updateRecurringTransactionsAmount(state, value) {
+      state.recurringTransactionsAmount = value;
     }
   },
   actions: {
@@ -78,6 +90,18 @@ export default new Vuex.Store({
     },
     updateHelperReloadTransactions(context, value) {
       context.commit("updateHelperReloadTransactions", value);
+    },
+    updateSelectedInOut (context, value) {
+      context.commit("updateSelectedInOut", value);
+    },
+    updateSelectedCategory(context, value) {
+      context.commit("updateSelectedCategory", value);
+    },
+    updateSelectedCategory(context, value) {
+      context.commit("updateRecurringTransactionsAmount", value);
+    },
+    updateRecurringTransactionsAmount(context, value) {
+      context.commit("updateRecurringTransactionAmount", value);
     }
-  }
+  },
 });

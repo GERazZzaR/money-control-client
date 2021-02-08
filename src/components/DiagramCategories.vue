@@ -1,21 +1,6 @@
 <template>
     <div class="DiagramCategories">
         <div class="container donutCell">
-            <div class="row justify-content-center">
-                <select v-model="selectedInOut"
-                    @change="changeSelectedCategory"
-                    class="form-control w-50 mt-5 mb-3"
-                >
-                    <option selected>Ausgaben</option>
-                    <option>Einnahmen</option>
-                </select>
-            </div>
-            <div class="row justify-content-center">
-                <select v-model="selectedCategory" class="form-control w-50 mb-5 mt-3" @change="changeSelectedCategory">
-                    <option>Alle Kategorien</option>
-                    <option v-for="category in categories" :key="category.id">{{ category.name }}</option>
-                </select>
-            </div>
             <div v-if="selectedTransactions.length > 0" align="center" class="donutDiv pb-5" id="piechartCategories"></div>
             <p v-if="selectedTransactions.length === 0" class="pb-5">Keine Daten vorhanden :-(</p>
         </div>
@@ -31,37 +16,36 @@ export default {
   name: "DiagramCategories",
   data: function() {
     return {
-      selectedInOut: "Ausgaben",
-      selectedCategory: "Alle Kategorien",
       selectedTransactions: [],
       dataToDisplay: []
     };
   },
   mounted() {
-    this.changeSelectedCategory();
-    this.initChart();
+    if (this.$route.path === "/fixcosts") this.fetchRecurringCosts();
+    else this.changeSelectedCategory();
   },
   computed: {
-    ...mapState(["transactions", "categories", "availableBudget", "selectedMonth", "selectedYear", "monatJahr"])
+    ...mapState(["transactions", "categories", "availableBudget", "selectedMonth", "selectedYear", "monatJahr", "selectedInOut", "selectedCategory", "recurringTransactionsAmount"])
   },
   watch: {
     availableBudget() {
       this.initChart();
     },
+    monatJahr() {
+      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
+    },
     selectedInOut() {
-      this.initChart();
+      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
     },
     selectedCategory() {
-      this.initChart();
-    },
-    monatJahr() {
-      this.changeSelectedCategory();
+      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
     },
     selectedMonth() {
-      this.changeSelectedCategory();
+      if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
     },
     selectedYear() {
-      this.changeSelectedCategory();
+        if (this.$route.path === "/dashbaord") this.changeSelectedCategory();
+        else if (this.$route.path === "/fixcosts") this.fetchRecurringCosts();
     }
   },
     methods: {
@@ -74,17 +58,17 @@ export default {
             this.categories.forEach((category, index) => {
                 arrayCategories[index+1] = new Array(2)
                 let thisCategoryAmount = 0.0;
-                this.selectedTransactions.forEach((transaction, i) => {
+                this.selectedTransactions.forEach((transaction) => {
                     if(transaction.category === category.name){
                         thisCategoryAmount += Number(transaction.amount.$numberDecimal);
                     }
                 })
                 if(thisCategoryAmount < 0) thisCategoryAmount*=-1
                 arrayCategories[index+1][0] = category.name
-                arrayCategories[index+1][1] = thisCategoryAmount
+                if(this.$route.path === '/fixcosts') arrayCategories[index+1][1] = thisCategoryAmount/12
+                else arrayCategories[index+1][1] = thisCategoryAmount
             })
             arrayCategories.sort((index, i) => {return i[1]-index[1]})
-
             this.dataToDisplay = arrayCategories;
             this.loadGoogleCharts()
             
@@ -134,16 +118,31 @@ export default {
                 let amountOk = (amountPositive === true && this.selectedInOut === 'Einnahmen') || (amountPositive === false && this.selectedInOut === 'Ausgaben');
                 let month = Number(transaction.date[3] + transaction.date[4]);
                 let year = Number(transaction.date[6] + transaction.date[7] + transaction.date[8] + transaction.date[9]);
-                let monthYearAmountOk = (month === this.selectedMonth && year === this.selectedYear && amountOk === true);
                 let yearAmountOk = (year === this.selectedYear && amountOk === true);
+                let monthYearAmountOk = (month === this.selectedMonth && yearAmountOk);
                 let categorieOk = (this.selectedCategory === 'Alle Kategorien' || transaction.category === this.selectedCategory);
 
-                if((this.monatJahr === 'Monat' && categorieOk && monthYearAmountOk) || (this.monatJahr === 'Jahr' && categorieOk && yearAmountOk)){
+                if((this.monatJahr === 'Monat' && categorieOk && monthYearAmountOk && transaction.wiederkehrend !== 'Jahr') || (this.monatJahr === 'Jahr' && categorieOk && yearAmountOk)){
                     this.selectedTransactions.push(transaction)
                 } 
             })
             this.initChart();
-        }
+        },
+        fetchRecurringCosts() {
+            this.selectedTransactions = [];
+            this.recurringTransactionsAmountComp = 0;
+            this.transactions.forEach(transaction => {
+                let year = transaction.date.substring(6,10)
+                if(transaction.wiederkehrend !== 'Nie' && transaction.amount.$numberDecimal < 0 && year === String(this.selectedYear)) {
+                    this.recurringTransactionsAmountComp += Number(transaction.amount.$numberDecimal)
+                    this.selectedTransactions.push(transaction)
+                }
+            })
+            this.recurringTransactionsAmountComp/=12
+            if (!this.recurringTransactionsAmountComp > 0) this.recurringTransactionsAmountComp = 0;
+            this.$store.commit('updateRecurringTransactionsAmount', this.recurringTransactionsAmountComp)
+            this.initChart();
+        },   
     }
 };
 </script>
