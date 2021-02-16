@@ -6,7 +6,6 @@
 
 <script>
 import { mapState } from "vuex";
-import TransactionsService from "@/services/TransactionsService";
 
 export default {
   name: "Home",

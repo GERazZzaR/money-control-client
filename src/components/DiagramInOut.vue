@@ -32,6 +32,9 @@ export default {
     availableBudget: function() {
       this.drawChart();
     },
+    transactions: function() {
+      this.drawChart();
+    }
   },
   methods: {
     drawChart() {

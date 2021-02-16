@@ -7,7 +7,7 @@
             <p v-if="projects.length === 0" class="mt-3">Du hast noch kein Projekt erstellt. Leg direkt los!</p><br>
             <button class="btn btn-primary mx-3" data-toggle="modal" data-target="#addProjectModal">+</button>
         </div>
-        <br><hr class="w-75">
+        <hr class="w-75">
 
         <!--Modal Project hinzufügen-->
         <div

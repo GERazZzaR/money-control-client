@@ -1,8 +1,8 @@
 import Api from "@/services/Api";
 
 export default {
-  fetchAllTransactions() {
-    return Api().get("transactions");
+  fetchAllTransactions(project) {
+    return Api().get("transactions/" + project);
   },
 
   addTransaction(params) {

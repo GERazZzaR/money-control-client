@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <Navbar v-bind:class=" { 'mb-5': $route.path !== '/dashboard' }" style="height:80px;" />
+    <Navbar class="mb-3" style="height:80px;" />
     <Projects ref="project" class="m-3" />
     <router-view id="routerView" />
 
@@ -365,9 +365,6 @@
     font-size: 24px;
     top: 40%;
   }
-}
-
-@media (min-width: 576px) {
   .card-columns {
     column-count: 2;
   }
@@ -433,7 +430,7 @@ export default {
     this.$refs.project.fetchAllProjects();
   },
   computed: {
-    ...mapState(["transactions", "categories", "selectedMonth", "selectedYear", "monatJahr"])
+    ...mapState(["transactions", "activeProject", "categories", "selectedMonth", "selectedYear", "monatJahr"])
   },
   watch: {
     $route: function () {
@@ -453,13 +450,12 @@ export default {
     },
     endDate: function(){
       this.endDateValidated = false;
-      this.endDateSet = true;
     },
   },
   methods: {
     async fetchAllTransactions() {
       try {
-        const response = await TransactionsService.fetchAllTransactions();
+        const response = await TransactionsService.fetchAllTransactions(this.activeProject);
         let transactions = response.data.transactions;
         this.$store.dispatch("updateTransactions", transactions);
         this.setDate();
@@ -557,11 +553,10 @@ export default {
       }
     },
 
-    async resetTransaction() {
+    resetTransaction() {
       this.amount = null;
       this.setDate();
       this.endDate = new Date().getFullYear();
-      this.endDateSet = false;
       this.wiederkehrend = 'Nie';
       this.category = 'Allgemein';
       this.title = '';
@@ -570,6 +565,7 @@ export default {
       this.transactionValidated = false;
       this.endDateValidated = false;
       this.modalNew = true;
+      this.endDateSet = false;
     },
 
     validateTransaction() {
@@ -597,6 +593,7 @@ export default {
         !this.endDateSet &&
         amountDateCategoryNoteNotNull
       ) {
+        this.endDateSet = true;
         if (this.wiederkehrend === "Monat") {
           this.endDate = new Date().getFullYear() + "-12";
         } else if (this.wiederkehrend === "Jahr") {
@@ -695,7 +692,6 @@ export default {
         this.callAddTransactionApi(date);
       })
       
-      this.resetTransaction();
       this.fetchAllTransactions();
       this.calculateAmounts();
       $('#closeTransaction').trigger('click');
@@ -707,7 +703,8 @@ export default {
         date: date,
         wiederkehrend: this.wiederkehrend,
         category: this.category,
-        note: this.title
+        note: this.title,
+        project: this.activeProject
       });
     },
 
@@ -730,6 +727,7 @@ export default {
       transactionToEdit.wiederkehrend = this.wiederkehrend;
       transactionToEdit.category = this.category;
       transactionToEdit.note = this.title;
+      
 
       await TransactionsService.updateTransaction({
         id: this.t_id,
@@ -737,7 +735,8 @@ export default {
         date: this.date,
         wiederkehrend: this.wiederkehrend,
         category: this.category,
-        note: this.title
+        note: this.title,
+        project: transactionToEdit.project
       });
       this.resetTransaction();
       this.calculateAmounts();

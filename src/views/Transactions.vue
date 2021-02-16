@@ -249,11 +249,15 @@ export default {
   },
   watch: {
     helperReloadTransactions: function () {
-      this.changeSelection()
+      this.changeSelection();
+    },
+    transactions: function() {
+      this.changeSelection();
+      this.selectedYear = this.years.length > 0 ? new Date().getFullYear() : "Alle Jahre";
     }
   },
   mounted: function() {
-    this.selectedYear = new Date().getFullYear();
+    this.selectedYear = this.years.length > 0 ? new Date().getFullYear() : "Alle Jahre";
     this.selectedMonth = String(new Date().getMonth() + 1);
     if (this.selectedMonth.length === 1) {
       this.selectedMonth = "0" + this.selectedMonth;
