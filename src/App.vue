@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <Navbar v-bind:class=" { 'mb-5': $route.path !== '/dashboard' }" style="height:80px;" />
+    <Projects ref="project" class="m-3" />
     <router-view id="routerView" />
 
     <!--Modal Transaktion hinzufügen / bearbeiten-->
@@ -397,13 +398,15 @@ form label, .invalid-feedback {
 /* eslint-disable */
 /* global $ */
 import Navbar from "@/components/Navbar.vue";
+import Projects from "@/components/Projects.vue";
 import TransactionsService from "@/services/TransactionsService";
 import CategoriesService from "@/services/CategoriesService";
 import { mapState } from "vuex";
 export default {
   name: "App",
   components: {
-    Navbar
+    Navbar,
+    Projects
   },
   data: () => {
     return {
@@ -425,9 +428,9 @@ export default {
       availableYears: [new Date().getFullYear(), new Date().getFullYear()+1, new Date().getFullYear()+2, new Date().getFullYear()+3, new Date().getFullYear()+4, new Date().getFullYear()+5]
     }
   },
-  created() {
-    this.fetchAllTransactions();
+  mounted() {
     this.fetchAllCategories();
+    this.$refs.project.fetchAllProjects();
   },
   computed: {
     ...mapState(["transactions", "categories", "selectedMonth", "selectedYear", "monatJahr"])

@@ -21,34 +21,36 @@ export default {
     };
   },
   mounted() {
-    if (this.$route.path === "/fixcosts") this.fetchRecurringCosts();
-    else this.changeSelectedCategory();
+    this.fetch();
   },
   computed: {
     ...mapState(["transactions", "categories", "availableBudget", "selectedMonth", "selectedYear", "monatJahr", "selectedInOut", "selectedCategory", "recurringTransactionsAmount"])
   },
   watch: {
     availableBudget() {
-      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
+      this.fetch();
     },
     monatJahr() {
-      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
+      this.fetch();
     },
     selectedInOut() {
-      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
+      this.fetch();
     },
     selectedCategory() {
-      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
+      this.fetch();
     },
     selectedMonth() {
-      if (this.$route.path === "/dashboard") this.changeSelectedCategory();
+      this.fetch();
     },
     selectedYear() {
-        if (this.$route.path === "/dashboard") this.changeSelectedCategory();
-        else if (this.$route.path === "/fixcosts") this.fetchRecurringCosts();
-    }
+        this.fetch();
+    },
   },
     methods: {
+        fetch() {
+            if (this.$route.path === "/dashboard") this.changeSelectedCategory();
+            else if (this.$route.path === "/fixcosts") this.fetchRecurringCosts();
+        },
         initChart() {
             let arrayCategories = new Array();
             arrayCategories[0] = new Array(2);

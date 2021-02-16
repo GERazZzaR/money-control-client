@@ -5,6 +5,8 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
+    projects: [],
+    activeProject: "",
     transactions: [],
     categories: [],
     availableBudget: 0.0,
@@ -20,6 +22,12 @@ export default new Vuex.Store({
     recurringTransactionsAmount: 0,
   },
   mutations: {
+    updateProjects(state, value) {
+      state.projects = value;
+    },
+    updateActiveProject(state, value) {
+      state.activeProject = value;
+    },
     updateTransactions(state, value) {
       state.transactions = value;
     },
@@ -61,6 +69,12 @@ export default new Vuex.Store({
     }
   },
   actions: {
+    updateProjects(context, value) {
+      context.commit("updateProjects", value);
+    },
+    updateActiveProject(context, value) {
+      context.commit("updateActiveProject", value);
+    },
     updateTransactions(context, value) {
       context.commit("updateTransactions", value);
     },
