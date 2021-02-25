@@ -426,7 +426,6 @@ export default {
     }
   },
   mounted() {
-    this.fetchAllCategories();
     this.$refs.project.fetchAllProjects();
   },
   computed: {

@@ -125,6 +125,7 @@ export default {
             if (project.active === true)  this.$store.dispatch("updateActiveProject", project.name);
         })
         await this.$parent.fetchAllTransactions();
+        await this.$parent.fetchAllCategories();
       } catch(e) {
         console.log(e)
       }     
@@ -181,8 +182,6 @@ export default {
                 date: date
             });
         }
-
-
         this.fetchAllProjects();
         this.resetProject();
     }
